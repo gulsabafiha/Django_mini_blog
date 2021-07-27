@@ -5,6 +5,7 @@ from django.shortcuts import render,HttpResponseRedirect
 from . forms import LoginForm, PostForm, SignUpForm
 from django.contrib import messages
 from . models import Post
+from django.contrib.auth.models import Group
 
 
 # home views
@@ -25,7 +26,10 @@ def contact(request):
 def dashboard(request):
     if request.user.is_authenticated:
         posts=Post.objects.all()
-        return render (request,'blog/dashboard.html',{'posts':posts})
+        user= request.user 
+        full_name=user.get_full_name()
+        grps=user.groups.all()
+        return render (request,'blog/dashboard.html',{'posts':posts,'full_name':full_name,'groups':grps})
     else:
         return HttpResponseRedirect('/login/')
 
@@ -41,8 +45,10 @@ def signup(request):
     if request.method == 'POST':
         form= SignUpForm(request.POST)
         if form.is_valid():
-            messages.success(request,"Congratulations!! You have Become an Author")
-            form.save()
+            messages.success(request,"Congratulations!! You have Become an Author. Let's Login!")
+            user = form.save()
+            group=Group.objects.get(name='Author')
+            user.groups.add(group)
     else:
         form= SignUpForm()
     return render (request,'blog/signup.html',{'form':form})
